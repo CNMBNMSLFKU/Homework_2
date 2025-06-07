@@ -40,13 +40,15 @@
     
   - 依據磁碟存取模型計算：
 
-    ``t_input = m × (ts + tl) + n × tt``
+    
+    ***t <sub>input</sub>* = *m* × ( *t <sub>s</sub>* + *t <sub>l</sub>* ) + *n* × *t <sub>t</sub>***
+  
 
-    其中：
+    其中：其中：
 
-    ``ts`` : seek time
+    ``ts`` : seek time (磁碟讀寫頭移動到目標磁軌所需的時間)
 
-    ``tl`` : latency time
+    ``tl`` : latency time (磁碟旋轉至目標區塊所需的延遲時間)
 
     ``tt`` : 每筆資料傳輸時間
 
@@ -279,25 +281,71 @@ int main() {
 
   2. ``Top`` 與 ``IsEmpty`` 為 O(1)。
 
-- 實作符合最小堆邏輯，測試輸出由小至大。
-
-  ![MINHEAP]()
 
 ### BST
 
-- 理論最佳高度為 log₂(n)，透過排序+中序建樹方式控制其為平衡狀態。
-
-- 實驗輸出：
-
-  Height/log₂(n) 約在 1.0 ~ 1.2 間，顯示樹相當接近平衡。
-
-  ![BST]()
+- 理論最佳高度為 log₂(n)，從排序陣列建 Balanced BST 控制其為穩定狀態。
 
 ### 外部排序
 
 - 輸入階段耗時主要來自 seek+latency 成本，尤其當 run 數（m）變多時。
 
-- 模型可進一步擴充至計算多階段 merge 時間，用於分析多次外部排序。
+- 模型可進一步擴充至計算多階段 merge 時間，用於分析多次外部排序。- 模型可進一步擴充至計算多階段 merge 時間，用於分析多次外部排序。
+  
+## 測試與驗證
 
-- 輸出結果
-  ![外部排序]()
+- **MinHeap：**
+  
+  包含正數、負數、重複值、邊界值（INT_MAX, INT_MIN），最終輸出排序為由小到大。
+  
+  ![MINHEAP](https://github.com/CNMBNMSLFKU/Homework_2/blob/main/MINHEAP.png)
+
+- **BST：**
+
+  Height/log₂(n) 約在 1.0 左右，顯示二元樹相當接近平衡。
+
+  ![BST](https://github.com/CNMBNMSLFKU/Homework_2/blob/main/BST.png)
+
+
+- **外部排序：**
+
+  公式代入資料如下
+  
+  ``t_input = 64 × (0.08 + 0.02) + 200000 × 0.001 = 6.4 + 200 = 206.4 秒``
+  
+  跟輸出結果一致
+  
+  ![外部排序](https://github.com/CNMBNMSLFKU/Homework_2/blob/main/%E5%A4%96%E9%83%A8%E6%8E%92%E5%BA%8F.png)
+
+  P.S. 在 Visual Studio 2019 編譯
+
+## 申論與開發報告
+
+這份作業的三個主題：MinHeap、平衡 BST（Binary Search Tree）以及外部排序的 I/O 模擬，主要目的是幫助我們理解：
+
+- 如何用程式模擬資料的排序與管理
+
+- 不同資料結構在處理大量資料時的優劣
+
+- 實體硬碟的存取特性對演算法設計的影響
+
+雖然這三部分看起來各自獨立，但實際上都是在處理「怎麼有效率地整理資料」。
+
+1. MinHeap 
+
+  這部分主要是練習用 vector 自行實作最小堆結構，重點在 ``push`` 和 ``pop`` 時維持堆的性質。寫的時候最常出問題的是 parent 和 child 的 index 計算，有時候會 swap 錯邊導致順序跑掉。調整好 HeapifyUp 和 HeapifyDown 後，結果就穩定了，最後測試幾組亂數和極端值（像 INT_MIN、INT_MAX）都能正確從小到大輸出，代表整體邏輯應該沒問題。
+
+2. BST
+
+  一開始想用隨機插入的方式建 BST，但發現高度會飆高導致結構不平衡，後來改用「排序後中間值當根」的方式來遞迴建樹，成功讓樹維持在接近 log₂(n) 的高度。這樣的平衡樹結構能有效避免退化成 linked list 的情況，測試多組 n 值後，發現高度都穩定在 2 倍 log₂(n) 以內，說明這種建法的效率很穩定。
+
+3. 外部排序
+
+  這部分主要是模擬磁碟的讀取行為，並估算輸入資料階段所花的 I/O 時間，透過公式 ``t_input = m × (ts + tl) + n × tt`` 把 seek time、latency 和傳輸時間加總起來。雖然沒有實作實際排序的程式，但這個模擬讓我更清楚外部排序第一階段的效能瓶頸多半來自磁碟操作，而不是演算法本身，算是補上了平常只學 CPU 演算法沒看到的那一塊。
+  
+### ❗需要改進的地方
+  - MinHeap 可進一步包裝為支援複雜資料型別（如 struct with key-value），適用於更進階的合併。
+
+  - BST 之後可以試看看 AVL 或Red-Black Tree，自動維持平衡性，而不是靠排序後建樹。
+
+  - 外部排序目前只做了輸入階段，如果要更完整，應該還要模擬 merge 階段和多次磁碟存取。
