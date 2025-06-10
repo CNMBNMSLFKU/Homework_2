@@ -140,7 +140,6 @@ public:
     }
 };
 
-// 主程式進行測試
 int main() {
     MinHeap<int> h;
     h.Push(5);
