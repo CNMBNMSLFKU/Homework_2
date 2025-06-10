@@ -25,7 +25,7 @@
 
 **2. BST**
 
-  - 使用亂數產生資料，先排序再遞迴以中間分割法建立 平衡 BST。
+  - 使用亂數產生資料，先排序再遞迴以中間分割法建立平衡 BST。
 
   - 避免傳統一筆一筆插入造成偏斜樹，使得高度更接近理論值 log₂(n)。
 
@@ -45,6 +45,7 @@
   
 
     其中：
+    
     ``rounds`` : 合併階段的輪數，計算方式為 ⌈ logₖ(m) ⌉。
 
     ``ts`` : seek time (磁碟讀寫頭移動到目標磁軌所需的時間)
@@ -350,11 +351,11 @@ plt.show()
 
   - 測試範圍：k = 2 到 64；t_CPU 掃描 1.0 秒到 300 秒。
 
-  - 產出圖表顯示 t_input 隨 k 值變化的趨勢，並標記出最佳的 t_CPU 與對應的 k。
+  - 圖表顯示 t_input 隨 k 值變化的趨勢，並標記出最佳的 t_CPU 與對應的 k。
 
   ![sort](https://github.com/CNMBNMSLFKU/Homework_2/blob/main/sort.png)
 
-  P.S. 在 Visual Studio 2019 編譯
+  P.S. MinHeap、BST 在 Visual Studio 2019 編譯，外部排序在 colab 編譯
 
 ## 申論與開發報告
 
@@ -370,7 +371,7 @@ plt.show()
 
 1. MinHeap 
 
-   這部分主要是練習用 vector 自行實作最小堆結構，重點在 ``push`` 和 ``pop`` 時維持堆的性質。寫的時候最常出問題的是 parent 和 child 的 index 計算，有時候會 swap 錯邊導致順序跑掉。調整好 HeapifyUp 和 HeapifyDown 後，結果就穩定了，最後測試幾組亂數和極端值（像 INT_MIN、INT_MAX）都能正確從小到大輸出，代表整體邏輯應該沒問題。
+   這部分主要是練習用 vector 實作最小堆積結構，重點在 ``push`` 和 ``pop`` 時維持堆的性質。寫的時候最常出問題的是 parent 和 child 的 index 計算，有時候會 swap 錯邊導致順序跑掉。調整好 HeapifyUp 和 HeapifyDown 後，結果就穩定了，最後測試幾組亂數和極端值（像 INT_MIN、INT_MAX）都能正確從小到大輸出，代表整體邏輯應該沒問題。
 
 2. BST
 
@@ -384,6 +385,6 @@ plt.show()
 
   - MinHeap 可進一步包裝為支援複雜資料型別（如 struct with key-value），適用於更進階的合併。
 
-  - BST 之後可以試看看 AVL 或Red-Black Tree，自動維持平衡性，而不是靠排序後建樹。
+  - BST 之後可以試看看 AVL 或 Red-Black Tree，自動維持平衡性，而不是靠排序後建樹。
 
   - 外部排序目前只模擬輸入時間與 CPU 合併，忽略了多階段合併的複雜磁碟存取。後續應加入記憶體容量對 k 值的限制，並結合實際排序演算法，以更全面地評估效能。
