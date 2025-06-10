@@ -20,7 +20,7 @@
 
   - 實作 HeapifyUp（插入後）與 HeapifyDown（刪除後）兩個方法以保持堆的結構正確。
 
-  - 提供介面如 Push、Pop、Top 與 IsEmpty，並繼承自抽象基底類別 MinPQ，符合物件導向原則。
+  - 提供介面如 ``Push``、``Pop``、``Top`` 與 ``IsEmpty``，並繼承自抽象基底類別 ``MinPQ``，符合物件導向原則。
 
 
 **2. BST**
