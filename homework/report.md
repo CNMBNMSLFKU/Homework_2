@@ -352,7 +352,7 @@ plt.show()
 
   - 產出圖表顯示 t_input 隨 k 值變化的趨勢，並標記出最佳的 t_CPU 與對應的 k。
 
-  ![]()
+  ![sort](https://github.com/CNMBNMSLFKU/Homework_2/blob/main/sort.png)
 
   P.S. 在 Visual Studio 2019 編譯
 
