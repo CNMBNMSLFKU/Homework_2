@@ -309,13 +309,9 @@ int main() {
 
 - **外部排序：**
 
-  公式代入資料如下
+
   
-  ``t_input = 64 × (0.08 + 0.02) + 200000 × 0.001 = 6.4 + 200 = 206.4 秒``
-  
-  跟輸出結果一致
-  
-  ![外部排序](https://github.com/CNMBNMSLFKU/Homework_2/blob/main/%E5%A4%96%E9%83%A8%E6%8E%92%E5%BA%8F.png)
+  ![]()
 
   P.S. 在 Visual Studio 2019 編譯
 
