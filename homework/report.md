@@ -10,7 +10,7 @@
 
 - 二元搜尋樹（BST）：針對隨機資料建立平衡 BST，並分析其高度與理論最小高度 log₂(n) 的比值。
 
-- 外部排序時間估算：根據磁碟 I/O 模型計算大規模資料輸入所需時間。
+- 外部排序：探討第二階段的輸入時間與 CPU 合併時間的關係。在記憶體容量遠小於資料筆數的情況下，必須使用多路合併（k-way merge）來進行外部排序。根據題意，我們計算不同 k 值下所需的合併輪數與總輸入時間，並評估是否存在某個 k 值，使得 CPU 處理時間與輸入時間相當。
 
 ### 解題策略
 
@@ -34,17 +34,18 @@
 
 **3. 外部排序**
 
-  - 模擬外部排序第一階段（Initial Run 輸入階段）的 I/O 耗時情況。
+  - CPU 時間假設：
+
+    題目給定 t_CPU 為常數（假設與 k 無關），所以假設 t_CPU 範圍為 1～300 秒，並找出 t_CPU ≈ t_input 的值與對應 k 值。
     
-  - 採用靜態參數模擬真實磁碟特性。
-    
-  - 依據磁碟存取模型計算：
+  - 使用公式：
 
     
-    ***t <sub>input</sub>* = *m* × ( *t <sub>s</sub>* + *t <sub>l</sub>* ) + *n* × *t <sub>t</sub>***
+    ***t <sub>input</sub>* = rounds × ( *m* × ( *t <sub>s</sub>* + *t <sub>l</sub>* ) + *n* × *t <sub>t</sub>*** )
   
 
-    其中：其中：
+    其中：
+    ``rounds`` : 合併階段的輪數，計算方式為 ⌈ logₖ(m) ⌉。
 
     ``ts`` : seek time (磁碟讀寫頭移動到目標磁軌所需的時間)
 
@@ -241,34 +242,66 @@ int main() {
 ```
 
 ### 外部排序
-```cpp
-#include <iostream>
-using namespace std;
+```python
+import math
+import matplotlib.pyplot as plt
 
-int main() {
-    // 題目給定參數設定（可依需求調整）
-    double ts = 0.08;   // 磁碟 seek time（秒）
-    double tl = 0.02;   // 磁碟 latency time（秒）
-    double tt = 0.001;  // 每筆資料的傳輸時間（秒）
+# 題目參數
+ts = 0.08    # seek time (秒)
+tl = 0.02    # latency time (秒)
+tt = 0.001   # 每筆傳輸時間（秒）
+n = 200000   # 資料筆數
+m = 64       # 初始 run 數
 
-    int n = 200000;     // 總資料筆數
-    int m = 64;         // 初始的 run 數（磁碟區塊數）
-    int S = 2000;       // 可容納筆數的記憶體大小（這邊沒用到，但可擴充使用）
+# 測試範圍：k from 2 to m
+k_values = list(range(2, m + 1))
+t_input_values = []
 
-    /*
-        外部排序輸入階段的 I/O 模型公式：
-        t_input = m × (ts + tl) + n × tt
+# 計算每個 k 的 I/O 時間
+for k in k_values:
+    rounds = math.ceil(math.log(m, k))
+    t_input_k = rounds * (m * (ts + tl) + n * tt)
+    t_input_values.append(t_input_k)
 
-        - m × (ts + tl)：模擬每個 run 做一次磁碟 seek 和 latency
-        - n × tt：所有資料傳輸到記憶體所花的時間
-    */
-    double t_input = m * (ts + tl) + n * tt;
+# 掃描 CPU 值從 1 到 300 秒
+cpu_test_values = [i / 10.0 for i in range(10, 3000)]  # 1.0 到 300.0 秒，每 0.1 秒
+closest_cpu = None
+closest_k = None
+min_diff = float('inf')
+closest_t_input = None
 
-    // 輸出總 I/O 時間
-    cout << "Total input time (t_input): " << t_input << " seconds" << endl;
+# 找出最接近的 CPU 時間
+for cpu_val in cpu_test_values:
+    for k, t_input_k in zip(k_values, t_input_values):
+        diff = abs(t_input_k - cpu_val)
+        if diff < min_diff:
+            min_diff = diff
+            closest_cpu = cpu_val
+            closest_k = k
+            closest_t_input = t_input_k
 
-    return 0;
+# 繪圖：顯示所有 t_input 曲線與找到的最佳點
+plt.figure(figsize=(10, 6))
+plt.plot(k_values, t_input_values, label='t_input (I/O time)', color='blue')
+plt.axhline(y=closest_cpu, color='red', linestyle='--', label=f'Best t_CPU ≈ {closest_cpu:.2f}s')
+plt.axvline(x=closest_k, color='green', linestyle=':', label=f'k = {closest_k}')
+plt.scatter([closest_k], [closest_t_input], color='black', zorder=5)
+plt.xlabel("k (ways merged)")
+plt.ylabel("Time (seconds)")
+plt.title("Match Between I/O Time and Estimated CPU Time")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# 輸出最佳配對資訊
+{
+    "最接近 t_input 的 t_CPU": round(closest_cpu, 3),
+    "對應的 k 值": closest_k,
+    "對應的 t_input": round(closest_t_input, 3),
+    "差距": round(min_diff, 3)
 }
+
 ```
 
 ## 效能分析
@@ -288,9 +321,11 @@ int main() {
 
 ### 外部排序
 
-- 輸入階段耗時主要來自 seek+latency 成本，尤其當 run 數（m）變多時。
+- 輸入時間受 k 值影響，k 越大，輪數越少，t_input 越小，但受限於記憶體 S（實際實作中需考慮）。
 
-- 模型可進一步擴充至計算多階段 merge 時間，用於分析多次外部排序。- 模型可進一步擴充至計算多階段 merge 時間，用於分析多次外部排序。
+- CPU 合併時間為常數（t_CPU ≈ 某固定值），可與不同的 t_input 作比較。
+
+- 本次模擬，程式成功找出一組 k 值與 t_input，使其接近某個合理的 CPU 時間，證明 t_CPU ≈ t_input 是有可能達成的，但不是保證永遠成立。
   
 ## 測試與驗證
 
@@ -308,16 +343,22 @@ int main() {
 
 
 - **外部排序：**
-
-
   
+  - 輸入參數：
+    
+    n = 200000，m = 64，ts = 0.08 秒，tl = 0.02 秒，tt = 0.001 秒/record，S = 2000（題目設定但未用於模擬）。
+
+  - 測試範圍：k = 2 到 64；t_CPU 掃描 1.0 秒到 300 秒。
+
+  - 產出圖表顯示 t_input 隨 k 值變化的趨勢，並標記出最佳的 t_CPU 與對應的 k。
+
   ![]()
 
   P.S. 在 Visual Studio 2019 編譯
 
 ## 申論與開發報告
 
-這份作業的三個主題：MinHeap、平衡 BST（Binary Search Tree）以及外部排序的 I/O 模擬，主要目的是幫助我們理解：
+這份作業的三個主題：MinHeap、平衡 BST（Binary Search Tree）以及外部排序的模擬，主要目的是幫助我們理解：
 
 - 如何用程式模擬資料的排序與管理
 
@@ -329,19 +370,20 @@ int main() {
 
 1. MinHeap 
 
-   這部分主要是練習用 vector 自行實作最小堆結構，重點在 ``push`` 和 ``pop`` 時維持堆的性質。寫的時候最常出問題的是 parent 和 child 的 index 計算，有時候會 swap 錯邊導致順序    跑掉。調整好 HeapifyUp 和 HeapifyDown 後，結果就穩定了，最後測試幾組亂數和極端值（像 INT_MIN、INT_MAX）都能正確從小到大輸出，代表整體邏輯應該沒問題。
+   這部分主要是練習用 vector 自行實作最小堆結構，重點在 ``push`` 和 ``pop`` 時維持堆的性質。寫的時候最常出問題的是 parent 和 child 的 index 計算，有時候會 swap 錯邊導致順序跑掉。調整好 HeapifyUp 和 HeapifyDown 後，結果就穩定了，最後測試幾組亂數和極端值（像 INT_MIN、INT_MAX）都能正確從小到大輸出，代表整體邏輯應該沒問題。
 
 2. BST
 
-   一開始想用隨機插入的方式建 BST，但發現高度會飆高導致結構不平衡，後來改用「排序後中間值當根」的方式來遞迴建樹，成功讓樹維持在接近 log₂(n) 的高度。這樣的平衡樹結構能有效避免退     化成 linked list 的情況，測試多組 n 值後，發現高度都穩定在 2 倍 log₂(n) 以內，說明這種建法的效率很穩定。
+   一開始想用隨機插入的方式建 BST，但發現高度會飆高導致結構不平衡，後來改用「排序後中間值當根」的方式來遞迴建樹，成功讓樹維持在接近 log₂(n) 的高度。這樣的平衡樹結構能有效避免退化成 linked list 的情況，測試多組 n 值後，發現高度都在 1 log₂(n) 左右，說明這種方法很穩定。
 
 3. 外部排序
 
-   這部分主要是模擬磁碟的讀取行為，並估算輸入資料階段所花的 I/O 時間，透過公式 ``t_input = m × (ts + tl) + n × tt`` 把 seek time、latency 和傳輸時間加總起來。雖然沒有實作     實際排序的程式，但這個模擬讓我更清楚外部排序第一階段的效能瓶頸多半來自磁碟操作，而不是演算法本身，算是補上了平常只學 CPU 演算法沒看到的那一塊。
+   磁碟操作的時間成本遠大於 CPU 處理時間，故磁碟 I/O 是外部排序效能的關鍵。而選擇合適的 k 值可以減少合併輪數，降低磁碟讀取次數，進而提升效能。雖然實務上還要考慮記憶體大小 S 對 k 的限制，但本次模擬先忽略此限制以簡化模型，仍有助於理解整體概念。
   
 ### ❗需要改進的地方
+
   - MinHeap 可進一步包裝為支援複雜資料型別（如 struct with key-value），適用於更進階的合併。
 
   - BST 之後可以試看看 AVL 或Red-Black Tree，自動維持平衡性，而不是靠排序後建樹。
 
-  - 外部排序目前只做了輸入階段，如果要更完整，應該還要模擬 merge 階段和多次磁碟存取。
+  - 外部排序目前只模擬輸入時間與 CPU 合併，忽略了多階段合併的複雜磁碟存取。後續應加入記憶體容量對 k 值的限制，並結合實際排序演算法，以更全面地評估效能。
